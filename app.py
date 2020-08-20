@@ -47,7 +47,7 @@ if file_upload is not None:
     rforest=RandomForestClassifier(random_state=42)
 
 
-    features=X_train.columns.tolist()
+    feat=X_train.columns.tolist()
 
 
     #Feature selection through feature importance
@@ -64,14 +64,19 @@ if file_upload is not None:
     # Get feature importance and plot it
     model=rforest
     importance=feature_sort(model,X_train,y_train)
-    plt.bar([x for x in range(len(importance))], importance)
+    feats = {} # a dict to hold feature_name: feature_importance
+    for features, importances in zip(data.columns, importance):
+        feats[features] = importances #add the name/value pair 
+
+    importances_df= pd.DataFrame.from_dict(feats, orient='index').rename(columns={0: 'Gini-importance'})
+    importances_df.sort_values(by='Gini-importance').plot(kind='barh', rot=45)
     plt.title('Feature Importance')
-    plt.xlabel('Feature (Variable Number)')
-    plt.ylabel('Importance')
+    plt.xlabel('Importance')
+    plt.ylabel('Features')
     st.pyplot()
 
     # get top features from the feature importance list
-    feature_imp=list(zip(features,importance))
+    feature_imp=list(zip(feat,importance))
     feature_sort=sorted(feature_imp, key = lambda x: x[1])
     n_top_features = st.sidebar.slider('Number of top features', min_value=5, max_value=20)
     top_features=list(list(zip(*feature_sort[-n_top_features:]))[0])
@@ -102,5 +107,3 @@ if file_upload is not None:
     X_train_bal, y_train_bal = rect.fit_sample(X_train_sfs_scaled, y_train)
     st.write('Shape of balanced y_train: ',np.bincount(y_train_bal))
     compute_performance(model, X_train_bal, y_train_bal,X_test_sfs_scaled,y_test)
-
-
