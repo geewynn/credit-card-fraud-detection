@@ -1,3 +1,4 @@
+# import libraries
 import streamlit as st
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -6,31 +7,49 @@ import matplotlib.pyplot as plt
 import numpy as np
 from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import  confusion_matrix,classification_report,matthews_corrcoef
+from sklearn.metrics import  confusion_matrix,classification_report
 
+# ignore warnings and set heading
 st.set_option('deprecation.showfileUploaderEncoding', False)
+st.title("A system for detecting credit card fraud")
 
 
-
+# function to compute performance
 def compute_performance(model, X_train, y_train,X_test,y_test):
+    # claculate score
     scores = cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy').mean()
-    'Accuracy: ',round(scores,3)
+
+    # fit the model
     model.fit(X_train,y_train)
+    # make prediction
     y_pred = model.predict(X_test)
+    # calculate confuion matrix
     cm=confusion_matrix(y_test,y_pred)
-    'Confusion Matrix: ',cm  
+    # write output of result
+    st.write('The total number of normal transactions detected is ', str(cm[0][0]))
+    st.write('The total number of fraudulent transactions detected is', str(cm[1][1]))
+    st.subheader('Accuracy')
+    'The model accuracy is: ',round(scores,3)
+    st.subheader('Confusion Matrix')
+    cm
+    st.write('The confusion matrix shows that', str(cm[0][0]), 'normal transactions and ', str(cm[1][1]), 
+            'fraud transactions while it misclassifies ', str(cm[1][0]), 'transactions as normal transactions.' )
+    # claculate classification report
+    st.subheader('Classification report')
     cr=classification_report(y_test, y_pred)
-    'Classification Report: ',cr
-    
+    cr
+    st.write('The classification report describes how well the model performs when making predictions for each class. ')
 
 
 # file upload section
 file_upload = st.file_uploader("Upload csv file for predictions", type=["csv"])
 if file_upload is not None:
+    # read the data
     data = pd.read_csv(file_upload)
-    
-    #st.sidebar.checkbox('Show what the dataframe looks like')
+    st.header('Data Summary')
+    # print the first 5 rows of the data
     st.write(data.head(5))
+    # print the shape of the data
     st.write('Shape of the dataframe: ',data.shape)
     st.write('Data decription: \n',data.describe())
 
@@ -39,6 +58,7 @@ if file_upload is not None:
     y=data.Class
 
     # Split the data into training and testing sets
+    st.subheader('Split Data')
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
     st.write('X_train: ',X_train.shape, ' y_train: ',y_train.shape)
     st.write('X_test: ',X_test.shape, ' y_test: ',y_test.shape)
@@ -102,8 +122,10 @@ if file_upload is not None:
     model=rforest
     
     # print the shape of random forest model
+    st.header('Handling Imbalanced Class')
     rect=smt
     st.write('Shape of imbalanced y_train: ',np.bincount(y_train))
     X_train_bal, y_train_bal = rect.fit_sample(X_train_sfs_scaled, y_train)
     st.write('Shape of balanced y_train: ',np.bincount(y_train_bal))
+    st.header('Model Performance')
     compute_performance(model, X_train_bal, y_train_bal,X_test_sfs_scaled,y_test)
